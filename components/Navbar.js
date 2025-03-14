@@ -1,53 +1,138 @@
-'use client';
-
 import Link from 'next/link';
-import { useState } from 'react';
-import '../styles/globals.css'; // Asegúrate de que los estilos globales estén importados
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 
-export default function Navbar() {
-    const [hoveredLink, setHoveredLink] = useState(null);
+const Navbar = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
 
-    return (
-        <nav style={styles.navbar}>
-            <Link 
-                href="/" 
-                style={{ ...styles.link, backgroundColor: hoveredLink === 'home' ? '#e0e0e0' : 'transparent' }}
-                onMouseEnter={() => setHoveredLink('home')}
-                onMouseLeave={() => setHoveredLink(null)}
-            >
-                Home
-            </Link>
-            <Link 
-                href="/crud" 
-                style={{ ...styles.link, backgroundColor: hoveredLink === 'colegios' ? '#e0e0e0' : 'transparent' }}
-                onMouseEnter={() => setHoveredLink('colegios')}
-                onMouseLeave={() => setHoveredLink(null)}
-            >
-                Colegios
-            </Link>
-        </nav>
-    );
-}
+  const isCurrentPath = (path) => router.pathname === path;
 
-const styles = {
-    navbar: {
+  return (
+    <nav style={{
+      backgroundColor: '#28a745',
+      padding: '0.75rem',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1000
+    }}>
+      <div style={{
+        maxWidth: '100%',
+        margin: '0 auto',
         display: 'flex',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '5px 20px',
-        color: 'black',
-        position: 'absolute',
-        top: '10px',
-        right: '20px',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    },
-    link: {
-        color: 'black',
-        textDecoration: 'none',
-        fontSize: '14px',
-        marginRight: '15px',
-        padding: '5px 10px',
-        borderRadius: '4px',
-        transition: 'background-color 0.3s',
-    },
-}; 
+        flexWrap: 'wrap'
+      }}>
+        <Link href="/" style={{
+          color: 'white',
+          textDecoration: 'none',
+          fontSize: '1.5rem',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <span style={{
+            backgroundColor: 'white',
+            color: '#28a745',
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold'
+          }}>M</span>
+          MetaEdu
+        </Link>
+
+        <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          style={{
+            display: 'none',
+            background: 'none',
+            border: 'none',
+            color: 'white',
+            padding: '0.5rem',
+            cursor: 'pointer',
+            '@media (max-width: 640px)': {
+              display: 'block'
+            }
+          }}
+        >
+          ☰
+        </button>
+
+        <div style={{
+          display: isMenuOpen ? 'flex' : 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: '1rem',
+          '@media (max-width: 640px)': {
+            display: isMenuOpen ? 'flex' : 'none',
+            flexDirection: 'column',
+            width: '100%',
+            marginTop: '1rem'
+          }
+        }}>
+          <Link href="/" style={{
+            color: 'white',
+            textDecoration: 'none',
+            padding: '0.5rem 1rem',
+            borderRadius: '4px',
+            position: 'relative',
+            transition: 'all 0.3s ease',
+            backgroundColor: isCurrentPath('/') ? 'rgba(255,255,255,0.1)' : 'transparent',
+            '&:after': {
+              content: '""',
+              position: 'absolute',
+              bottom: 0,
+              left: isCurrentPath('/') ? '10%' : '50%',
+              width: isCurrentPath('/') ? '80%' : '0%',
+              height: '2px',
+              backgroundColor: 'white',
+              transition: 'all 0.3s ease'
+            },
+            '&:hover:after': {
+              left: '10%',
+              width: '80%'
+            }
+          }}>
+            Inicio
+          </Link>
+          <Link href="/crud" style={{
+            color: 'white',
+            textDecoration: 'none',
+            padding: '0.5rem 1rem',
+            borderRadius: '4px',
+            position: 'relative',
+            transition: 'all 0.3s ease',
+            backgroundColor: isCurrentPath('/crud') ? 'rgba(255,255,255,0.1)' : 'transparent',
+            '&:after': {
+              content: '""',
+              position: 'absolute',
+              bottom: 0,
+              left: isCurrentPath('/crud') ? '10%' : '50%',
+              width: isCurrentPath('/crud') ? '80%' : '0%',
+              height: '2px',
+              backgroundColor: 'white',
+              transition: 'all 0.3s ease'
+            },
+            '&:hover:after': {
+              left: '10%',
+              width: '80%'
+            }
+          }}>
+            Colegios
+          </Link>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;
