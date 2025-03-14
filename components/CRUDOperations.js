@@ -14,12 +14,22 @@ const CRUDOperations = () => {
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState(''); // 'add', 'edit', or ''
   const [formData, setFormData] = useState({
-    nombre: '',
-    codigo: '',
+    nombre_departamento: '',
+    codigo_departamento: '',
+    nombre_municipio: '',
+    codigo_municipio: '',
+    nombre_colegio: '',
+    codigo_colegio: '',
+    nombre_sede: '',
+    codigo_sede: '',
     id_departamento: '',
     id_municipio: '',
-    id_colegio: ''
+    codigo_colegio: ''
   });
+  const [departamentos, setDepartamentos] = useState([]);
+  const [departamentosLoading, setDepartamentosLoading] = useState(true);
+  const [municipios, setMunicipios] = useState([]);
+  const [municipiosLoading, setMunicipiosLoading] = useState(false);
 
   useEffect(() => {
     setWindowWidth(window.innerWidth);
@@ -32,6 +42,86 @@ const CRUDOperations = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const fetchDepartamentos = async () => {
+      try {
+        setDepartamentosLoading(true);
+        const response = await fetch('/api/crud', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            method: 'GET',
+            body: {
+              table: 'departamento',
+              query: ''  // Enviamos string vacío para obtener todos los departamentos
+            }
+          })
+        });
+        const result = await response.json();
+        console.log('Departamentos cargados:', result); // Para debug
+        if (Array.isArray(result)) {
+          setDepartamentos(result);
+        } else {
+          console.error('Invalid response format:', result);
+          setDepartamentos([]);
+        }
+      } catch (error) {
+        console.error('Error fetching departamentos:', error);
+        setDepartamentos([]);
+      } finally {
+        setDepartamentosLoading(false);
+      }
+    };
+
+    fetchDepartamentos();
+  }, []);
+
+  useEffect(() => {
+    const fetchMunicipios = async () => {
+      if (!formData.id_departamento) {
+        setMunicipios([]);
+        return;
+      }
+
+      try {
+        setMunicipiosLoading(true);
+        const response = await fetch('/api/crud', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            method: 'GET',
+            body: {
+              table: 'municipio',
+              query: ''
+            }
+          })
+        });
+        const result = await response.json();
+        if (Array.isArray(result)) {
+          // Filtrar municipios por el departamento seleccionado
+          const municipiosFiltrados = result.filter(
+            m => m.id_departamento === parseInt(formData.id_departamento)
+          );
+          setMunicipios(municipiosFiltrados);
+        } else {
+          console.error('Invalid response format:', result);
+          setMunicipios([]);
+        }
+      } catch (error) {
+        console.error('Error fetching municipios:', error);
+        setMunicipios([]);
+      } finally {
+        setMunicipiosLoading(false);
+      }
+    };
+
+    fetchMunicipios();
+  }, [formData.id_departamento]);
+
   const isMobile = windowWidth <= 640;
 
   const handleEntityChange = (event) => {
@@ -40,7 +130,7 @@ const CRUDOperations = () => {
     setResultsFound(false);
   };
 
-  const showErrorModal = (message) => {
+  const showErrorModal = (message, type = 'error') => {
     setErrorMessage(message);
     setShowError(true);
     setTimeout(() => setShowError(false), 3000);
@@ -306,7 +396,7 @@ const CRUDOperations = () => {
                 }
               </div>
             </div>
-          </div>
+        </div>
         );
 
       case 'colegio':
@@ -399,13 +489,50 @@ const CRUDOperations = () => {
     }
   };
 
+  const getFormFields = () => {
+    const fields = {
+      nombre: '',
+      codigo: ''
+    };
+
+    switch (selectedEntity) {
+      case 'departamento':
+        fields.nombre = formData.nombre_departamento;
+        fields.codigo = formData.codigo_departamento;
+        break;
+      case 'municipio':
+        fields.nombre = formData.nombre_municipio;
+        fields.codigo = formData.codigo_municipio;
+        fields.id_departamento = formData.id_departamento;
+        break;
+      case 'colegio':
+        fields.nombre = formData.nombre_colegio;
+        fields.codigo = formData.codigo_colegio;
+        fields.id_municipio = formData.id_municipio;
+        break;
+      case 'sede':
+        fields.nombre = formData.nombre_sede;
+        fields.codigo = formData.codigo_sede;
+        fields.codigo_colegio = formData.codigo_colegio;
+        break;
+    }
+
+    return fields;
+  };
+
   const handleAdd = () => {
     setFormData({
-      nombre: '',
-      codigo: '',
+      nombre_departamento: '',
+      codigo_departamento: '',
+      nombre_municipio: '',
+      codigo_municipio: '',
+      nombre_colegio: '',
+      codigo_colegio: '',
+      nombre_sede: '',
+      codigo_sede: '',
       id_departamento: '',
       id_municipio: '',
-      id_colegio: ''
+      codigo_colegio: ''
     });
     setFormMode('add');
     setShowForm(true);
@@ -413,18 +540,39 @@ const CRUDOperations = () => {
 
   const handleEdit = (item) => {
     setFormData({
-      nombre: item[`nombre_${selectedEntity}`] || '',
-      codigo: item[`codigo_${selectedEntity}`] || '',
+      nombre_departamento: item.nombre_departamento || '',
+      codigo_departamento: item.codigo_departamento || '',
+      nombre_municipio: item.nombre_municipio || '',
+      codigo_municipio: item.codigo_municipio || '',
+      nombre_colegio: item.nombre_colegio || '',
+      codigo_colegio: item.codigo_colegio || '',
+      nombre_sede: item.nombre_sede || '',
+      codigo_sede: item.codigo_sede || '',
       id_departamento: item.id_departamento || '',
       id_municipio: item.id_municipio || '',
-      id_colegio: item.id_colegio || ''
+      codigo_colegio: item.codigo_colegio || ''
     });
     setFormMode('edit');
     setShowForm(true);
     setSelectedItem(item);
   };
 
-  const handleDelete = async (item) => {
+  const getItemId = (item) => {
+    switch (selectedEntity) {
+      case 'departamento':
+        return item.id_departamento;
+      case 'municipio':
+        return item.id_municipio;
+      case 'colegio':
+        return item.id_colegio;
+      case 'sede':
+        return item.id_sede;
+      default:
+        return null;
+    }
+  };
+
+  const handleDelete = async (id) => {
     if (!confirm('¿Está seguro de que desea eliminar este elemento?')) {
       return;
     }
@@ -439,202 +587,293 @@ const CRUDOperations = () => {
           method: 'DELETE',
           body: {
             table: selectedEntity,
-            id: item[`id_${selectedEntity}`]
-          },
-        }),
+            id: id
+          }
+        })
       });
 
-      const result = await response.json();
-
-      if (result.error) {
-        showErrorModal(result.error);
-      } else {
-        // Remover el item eliminado de la lista
-        setData(data.filter(i => i[`id_${selectedEntity}`] !== item[`id_${selectedEntity}`]));
-        showErrorModal('Elemento eliminado exitosamente');
+      if (!response.ok) {
+        const errorData = await response.json();
+        showErrorModal(errorData.error || 'Error al eliminar');
+        return;
       }
+
+      // Actualizar la lista después de eliminar
+      const searchResponse = await fetch('/api/crud', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          method: 'GET',
+          body: {
+            table: selectedEntity,
+            query: '' // Traer todos los registros después de eliminar
+          }
+        })
+      });
+
+      const searchResult = await searchResponse.json();
+      setData(searchResult);
+      setSearchTerm(''); // Limpiar el término de búsqueda
+      showErrorModal('Elemento eliminado exitosamente', 'success');
     } catch (error) {
-      console.error('Error deleting item:', error);
-      showErrorModal('Error al eliminar el elemento');
+      console.error('Error:', error);
+      showErrorModal('Error al eliminar');
     }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     try {
+      const fields = getFormFields();
+      
+      // Validar campos requeridos según la entidad
+      const requiredFields = {
+        departamento: ['nombre', 'codigo'],
+        municipio: ['nombre', 'codigo', 'id_departamento'],
+        colegio: ['nombre', 'codigo', 'id_municipio'],
+        sede: ['nombre', 'codigo', 'codigo_colegio']
+      };
+
+      const missingFields = requiredFields[selectedEntity].filter(
+        field => !fields[field]
+      );
+
+      if (missingFields.length > 0) {
+        alert(`Por favor complete los siguientes campos: ${missingFields.join(', ')}`);
+        return;
+      }
+
       const response = await fetch('/api/crud', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          method: formMode === 'add' ? 'POST' : 'PUT',
+          method: 'POST',
           body: {
             table: selectedEntity,
-            data: formData,
-            id: formMode === 'edit' ? selectedItem[`id_${selectedEntity}`] : undefined
-          },
-        }),
+            data: fields
+          }
+        })
       });
 
-      const result = await response.json();
-
-      if (result.error) {
-        showErrorModal(result.error);
-      } else {
-        showErrorModal(formMode === 'add' ? 'Elemento añadido exitosamente' : 'Elemento actualizado exitosamente');
-        setShowForm(false);
-        // Actualizar la lista si estamos en modo edición
-        if (formMode === 'edit') {
-          setData(data.map(item => 
-            item[`id_${selectedEntity}`] === selectedItem[`id_${selectedEntity}`] 
-              ? { ...item, ...result }
-              : item
-          ));
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear el registro');
       }
+
+      const result = await response.json();
+      
+      // Actualizar la lista de items
+      setData(prevItems => [...prevItems, result]);
+      
+      // Limpiar el formulario y cerrarlo
+      setFormData({
+        nombre_departamento: '',
+        codigo_departamento: '',
+        nombre_municipio: '',
+        codigo_municipio: '',
+        nombre_colegio: '',
+        codigo_colegio: '',
+        nombre_sede: '',
+        codigo_sede: '',
+        id_departamento: '',
+        id_municipio: '',
+        codigo_colegio: ''
+      });
+      setShowForm(false);
+      
+      // Mostrar mensaje de éxito
+      alert('Registro creado exitosamente');
+      
     } catch (error) {
-      console.error('Error submitting form:', error);
-      showErrorModal('Error al procesar la solicitud');
+      console.error('Error:', error);
+      alert(error.message);
     }
+  };
+
+  const getFieldNames = () => {
+    switch (selectedEntity) {
+      case 'departamento':
+        return {
+          nombre: 'nombre_departamento',
+          codigo: 'codigo_departamento'
+        };
+      case 'municipio':
+        return {
+          nombre: 'nombre_municipio',
+          codigo: 'codigo_municipio'
+        };
+      case 'colegio':
+        return {
+          nombre: 'nombre_colegio',
+          codigo: 'codigo_colegio'
+        };
+      case 'sede':
+        return {
+          nombre: 'nombre_sede',
+          codigo: 'codigo_sede'
+        };
+      default:
+        return {
+          nombre: 'nombre',
+          codigo: 'codigo'
+        };
+    }
+  };
+
+  const renderDepartamentoSelect = () => (
+    <select
+      value={formData.id_departamento || ''}
+      onChange={handleInputChange}
+      name="id_departamento"
+      className="form-select"
+      required
+      disabled={departamentosLoading}
+    >
+      <option value="">
+        {departamentosLoading ? 'Cargando departamentos...' : 'Seleccione un departamento'}
+      </option>
+      {!departamentosLoading && departamentos.map(dep => (
+        <option key={dep.id_departamento} value={dep.id_departamento}>
+          {dep.nombre_departamento} ({dep.codigo_departamento})
+        </option>
+      ))}
+    </select>
+  );
+
+  const renderMunicipioSelect = () => {
+    if (!formData.id_departamento) {
+      return (
+        <select 
+          className="form-select" 
+          disabled
+        >
+          <option value="">Seleccione primero un departamento</option>
+        </select>
+      );
+    }
+
+    if (municipiosLoading) {
+      return (
+        <select className="form-select" disabled>
+          <option>Cargando municipios...</option>
+        </select>
+      );
+    }
+
+    return (
+      <select
+        className="form-select"
+        value={formData.id_municipio}
+        onChange={handleInputChange}
+        name="id_municipio"
+        required
+      >
+        <option value="">Seleccione un municipio</option>
+        {municipios.map((municipio) => (
+          <option key={municipio.id_municipio} value={municipio.id_municipio}>
+            {municipio.nombre_municipio} ({municipio.codigo_municipio})
+          </option>
+        ))}
+      </select>
+    );
   };
 
   const renderForm = () => {
     if (!showForm) return null;
 
+    const fieldNames = getFieldNames();
+
     return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: isMobile ? 'flex-start' : 'center',
-        zIndex: 1000,
-        overflowY: 'auto',
-        padding: isMobile ? '1rem' : '2rem'
-      }}>
-        <div style={{
-          backgroundColor: 'white',
-          padding: isMobile ? '1rem' : '2rem',
-          borderRadius: '8px',
-          width: isMobile ? '100%' : '90%',
-          maxWidth: '500px',
-          maxHeight: isMobile ? '100%' : '90vh',
-          overflowY: 'auto'
-        }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>
-            {formMode === 'add' ? 'Añadir' : 'Editar'} {selectedEntity}
-          </h3>
+      <div className="modal-overlay">
+        <div className="modal">
+          <h2 style={{ marginBottom: '1.5rem' }}>
+            {formMode === 'add' ? `Añadir ${selectedEntity}` : `Editar ${selectedEntity}`}
+          </h2>
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Nombre</label>
+            <div className="mb-3">
+              <label className="form-label">Nombre</label>
               <input
                 type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px'
-                }}
+                className="form-control"
+                name={fieldNames.nombre}
+                value={formData[fieldNames.nombre]}
+                onChange={handleInputChange}
                 required
               />
             </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>Código</label>
+            <div className="mb-3">
+              <label className="form-label">Código</label>
               <input
                 type="text"
-                value={formData.codigo}
-                onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px'
-                }}
+                className="form-control"
+                name={fieldNames.codigo}
+                value={formData[fieldNames.codigo]}
+                onChange={handleInputChange}
                 required
               />
             </div>
-            {selectedEntity !== 'departamento' && (
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem' }}>ID Departamento</label>
-                <input
-                  type="text"
-                  value={formData.id_departamento}
-                  onChange={(e) => setFormData({ ...formData, id_departamento: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px'
-                  }}
-                  required
-                />
+            {(selectedEntity === 'municipio' || selectedEntity === 'colegio' || selectedEntity === 'sede') && (
+              <div className="mb-3">
+                <label className="form-label">Departamento</label>
+                {renderDepartamentoSelect()}
               </div>
             )}
             {(selectedEntity === 'colegio' || selectedEntity === 'sede') && (
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem' }}>ID Municipio</label>
-                <input
-                  type="text"
-                  value={formData.id_municipio}
-                  onChange={(e) => setFormData({ ...formData, id_municipio: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px'
-                  }}
-                  required
-                />
+              <div className="mb-3">
+                <label className="form-label">Municipio</label>
+                {renderMunicipioSelect()}
               </div>
             )}
             {selectedEntity === 'sede' && (
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem' }}>ID Colegio</label>
+              <div className="mb-3">
+                <label className="form-label">Código Colegio</label>
                 <input
                   type="text"
-                  value={formData.id_colegio}
-                  onChange={(e) => setFormData({ ...formData, id_colegio: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px'
-                  }}
+                  className="form-control"
+                  name="codigo_colegio"
+                  value={formData.codigo_colegio}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
             )}
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
+            <div className="d-flex justify-content-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  background: 'white'
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowForm(false);
+                  setFormData({
+                    nombre_departamento: '',
+                    codigo_departamento: '',
+                    nombre_municipio: '',
+                    codigo_municipio: '',
+                    nombre_colegio: '',
+                    codigo_colegio: '',
+                    nombre_sede: '',
+                    codigo_sede: '',
+                    id_departamento: '',
+                    id_municipio: '',
+                    codigo_colegio: ''
+                  });
                 }}
               >
                 Cancelar
               </button>
-              <button
-                type="submit"
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#28a745',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px'
-                }}
-              >
+              <button type="submit" className="btn btn-primary">
                 {formMode === 'add' ? 'Añadir' : 'Guardar'}
               </button>
             </div>
@@ -728,9 +967,6 @@ const CRUDOperations = () => {
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
               flex: isMobile ? 1 : 'none'
             }}>
               <span>🔍</span>
@@ -743,9 +979,6 @@ const CRUDOperations = () => {
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
               flex: isMobile ? 1 : 'none'
             }}>
               <span>➕</span>
@@ -788,7 +1021,7 @@ const CRUDOperations = () => {
         }}>
           {data.map((item) => (
             <div
-              key={item.id_departamento || item.id_municipio || item.id_colegio || item.id_sede}
+              key={getItemId(item)}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -835,7 +1068,7 @@ const CRUDOperations = () => {
                   <span>Editar</span>
                 </button>
                 <button
-                  onClick={() => handleDelete(item)}
+                  onClick={() => handleDelete(getItemId(item))}
                   style={{
                     padding: '0.5rem 1rem',
                     backgroundColor: '#dc3545',
